@@ -1,16 +1,17 @@
 import express from "express";
-import healthRoute from "./routes/healthRoute.js"
+import routeIndex from './routes/routeIndex.js' 
+import helmet from 'helmet'
+
 
 const app = express() ;
-
+app.use(helmet()) ;
 
 
 app.get("/",(req,res) => {
     res.send("everything works !!") ;
 })
 
-app.use("/api/v1/health",healthRoute) ;
-
+app.use("/api",routeIndex) ;
 
 
 
