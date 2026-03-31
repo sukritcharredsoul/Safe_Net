@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { forgotPassword, login, signUp } from '../controllers/registration-controllers/authController.js' ;
+import { forgotPassword, login, signUp , verifyEmail } from '../controllers/registration-controllers/authController.js' ;
 const router = Router() ;
 
-router.use("/auth/signup",signUp) ;
-router.use("/auth/login",login) ;
-router.use("/auth/forgotPassword",forgotPassword) ;
+router.post("/auth/signup",signUp) ;
+router.post("/auth/login",login) ;
+router.post("/auth/forgotPassword",forgotPassword) ;
+router.get("/auth/verify-email/:token",verifyEmail) ;
 
 
 export default router ;

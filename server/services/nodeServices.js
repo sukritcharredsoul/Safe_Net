@@ -1,4 +1,7 @@
 import nodemailer from 'nodemailer';
+import { configDotenv } from 'dotenv';
+
+configDotenv() ;
 
 const transporter = nodemailer.createTransport({
     host:   process.env.SMTP_HOST,
@@ -7,7 +10,7 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
-    },
+    }, 
 });
 
 transporter.verify((error) => {
@@ -40,7 +43,7 @@ export const sendPasswordResetEmail = ({ to, name, resetToken }) => {
 };
 
 export const sendVerificationEmail = ({ to, name, verificationToken }) => {
-    const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+    const verifyUrl = `${process.env.SERVER_URL}/verify-email/${verificationToken}`;
 
     return sendMail({
         to,

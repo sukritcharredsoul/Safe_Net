@@ -6,7 +6,8 @@
     "express-rate-limit": "^8.3.1",
     "json-web-token": "^3.2.0",
     "mongoose": "^9.3.3",
-    "nodemailer": "^8.0.4"
+    "nodemailer": "^8.0.4",
+    "tls-certificate-checker": "^1.0.3"
   },
   "type": "module"
 }

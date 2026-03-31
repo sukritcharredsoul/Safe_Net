@@ -7,8 +7,6 @@ import app from './app.js' ;
 
 
 
-
-
 mongoose.connect(process.env.MONGODB_CONNECT_URI).then(() => {
     console.log("Database Connected") ;
 

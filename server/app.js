@@ -1,10 +1,10 @@
 import express from "express";
 import routeIndex from './routes/routeIndex.js' 
-import helmet from 'helmet'
+// import helmet from 'helmet'
 
 
 const app = express() ;
-app.use(helmet()) ;
+// app.use(helmet()) ;
 app.use(express.json()) ;
 
 

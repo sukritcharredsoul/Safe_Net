@@ -85,9 +85,9 @@ const userSchema = new mongoose.Schema(
 );
 
 
-userSchema.index({ email: 1 });
-userSchema.index({ resetPasswordToken: 1 });
-userSchema.index({ emailVerificationToken: 1 });
+// userSchema.index({ email: 1 });
+// userSchema.index({ resetPasswordToken: 1 });
+// userSchema.index({ emailVerificationToken: 1 });
 
 
 // ─── Instance methods ─────────────────────────────────────────────────────────
