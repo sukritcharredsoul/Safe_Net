@@ -1,13 +1,10 @@
 import { Router } from "express";
-import signUpController from '../controllers/registration-controllers/signUpController.js'
-import forgotPassController from '../controllers/registration-controllers/forgotPassController.js'
-import loginController from '../controllers/registration-controllers/loginController.js'
-
+import { forgotPassword, login, signUp } from '../controllers/registration-controllers/authController.js' ;
 const router = Router() ;
 
-router.use("/auth/signup",signUpController) ;
-router.use("/auth/login",loginController) ;
-router.use("/auth/forgotPassword",forgotPassController) ;
+router.use("/auth/signup",signUp) ;
+router.use("/auth/login",login) ;
+router.use("/auth/forgotPassword",forgotPassword) ;
 
 
 export default router ;
