@@ -75,7 +75,7 @@ cp .env.example .env
 Create a `.env` file in the `server/` directory:
 
 ```env
-PORT=3000
+PORT=3333
 
 # VirusTotal
 VIRUSTOTAL_API_KEY=your_vt_api_key_here
@@ -103,7 +103,7 @@ npm run dev
 npm start
 ```
 
-Server starts at `http://localhost:3000`
+Server starts at `http://localhost:3333`
 
 ---
 

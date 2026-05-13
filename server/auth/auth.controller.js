@@ -1,7 +1,8 @@
 import bcrypt from 'bcrypt';
 import crypto from 'node:crypto';
-import { User } from '../../models/User.js';
-import {  sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail } from '../../services/nodeServices.js';
+import { User } from '../models/User.js';
+import generateToken from '../utils/jwt.util.js'
+import {  sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail } from '../mail/mailer.js';
 
 
 
@@ -40,7 +41,7 @@ export const signUp = async (req, res) => {
             emailVerificationExpires: Date.now() + 1000 * 60 * 60 * 24, // 24 hours
         });
 
-        // Send verification email — don't block the response if this fails
+        
         try {
             await sendVerificationEmail({ to: email, name, verificationToken: rawVerifyToken });
         } catch (mailError) {
@@ -99,7 +100,7 @@ export const verifyEmail = async (req, res) => {
 };
 
 
-// ─── Login ────────────────────────────────────────────────────────────────────
+
 
 export const login = async (req, res) => {
     try {
@@ -109,14 +110,14 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: 'Credentials required' });
         }
 
-        // select('+password') needed because password has select:false in schema
+        
         const user = await User.findOne({ email }).select('+password +loginAttempts +lockedUntil');
 
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Check lockout before comparing password
+        
         if (user.isLocked()) {
             const minutesLeft = Math.ceil((user.lockedUntil - Date.now()) / 1000 / 60);
             return res.status(423).json({
@@ -139,6 +140,7 @@ export const login = async (req, res) => {
         // TODO: generate and return a JWT token here
         return res.status(200).json({
             message: 'Login successful',
+            token : generateToken(user._id) ,
             user: {
                 id:    user._id,
                 name:  user.name,

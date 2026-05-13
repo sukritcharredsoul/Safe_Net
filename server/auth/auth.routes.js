@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { forgotPassword, login, signUp , verifyEmail } from '../controllers/registration-controllers/authController.js' ;
+import { forgotPassword, login, signUp , verifyEmail } from './auth.controller.js' ;
 const router = Router() ;
 
 router.post("/auth/signup",signUp) ;
