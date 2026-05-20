@@ -1,63 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     User:
- *       type: object
- *       required:
- *         - name
- *         - email
- *         - password
- *       properties:
- *         _id:
- *           type: string
- *           example: 6641a5d9c21f4f0012345678
- *
- *         name:
- *           type: string
- *           minLength: 2
- *           maxLength: 64
- *           example: John Doe
- *
- *         email:
- *           type: string
- *           format: email
- *           example: example@gmail.com
- *         password:
- *           type: string
- *           format: password
- *           minLength: 8
- *           example: Password@123
- *
- *         role:
- *           type: string
- *           enum:
- *             - user
- *             - admin
- *           default: user
- *           example: user
- *
- *         isVerified:
- *           type: boolean
- *           example: false
- *
- *         lastLogin:
- *           type: string
- *           format: date-time
- *
- *         createdAt:
- *           type: string
- *           format: date-time
- *
- *         updatedAt:
- *           type: string
- *           format: date-time
- */
-
 const userSchema = new mongoose.Schema(
     {
         name: {

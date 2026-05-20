@@ -4,7 +4,7 @@ const xon = new XposedOrNot();
 
 export const checkEmail = async(req,res) => {
     try {
-        const {email} = req.query ;
+        const {email} = req.body ;
         
         if (!email || typeof email !== "string") {
             return res.status(400).json({ message: "Invalid email" });

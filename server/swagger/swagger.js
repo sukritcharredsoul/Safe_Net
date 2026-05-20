@@ -41,7 +41,6 @@ const options = {
         "./breach/*.js",
         "./scan/*.js",
         "./health/*.js",
-        "./models/*.js"
     ],
 };
 
