@@ -1,4 +1,7 @@
 import { Router } from "express";
+
+import { authLimiter} from "../utils/rate.limiting.js";
+
 import {
     forgotPassword,
     login,
@@ -40,7 +43,7 @@ const router = Router();
  *       400:
  *         description: Invalid request
  */
-router.post("/auth/signup", signUp);
+router.post("/auth/signup", authLimiter , signUp);
 
 /**
  * @swagger
@@ -70,7 +73,7 @@ router.post("/auth/signup", signUp);
  *       401:
  *         description: Invalid credentials
  */
-router.post("/auth/login", login);
+router.post("/auth/login", authLimiter,login);
 
 /**
  * @swagger
