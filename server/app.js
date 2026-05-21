@@ -18,8 +18,11 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use(helmet({
+    contentSecurityPolicy : false
+})) ;
 
-// app.use(helmet()) ;
+
 app.use(morgan("combined", {
   stream : fs.createWriteStream('./logs/access.log',{flags : 'a'})
 })) ;
