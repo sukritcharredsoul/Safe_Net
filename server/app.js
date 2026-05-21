@@ -13,7 +13,7 @@ import {limiter} from "./utils/rate.limiting.js";
 const app = express();
 
 app.use(cors({
-  origin: "https://safe-net-seven.vercel.app",
+  origin: "https://safe-net-seven.vercel.app", 
   credentials: true,
 }));
 
