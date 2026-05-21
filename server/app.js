@@ -13,7 +13,7 @@ import {limiter} from "./utils/rate.limiting.js";
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "https://safe-net-seven.vercel.app/",
   credentials: true,
 }));
 
@@ -25,6 +25,8 @@ app.use(helmet({
 app.use(morgan("combined", {
   stream : fs.createWriteStream('./logs/access.log',{flags : 'a'})
 })) ;
+
+app.set("trust proxy",1) ;
 app.use(express.json());
 app.use(limiter) ;
 
