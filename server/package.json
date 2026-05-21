@@ -20,7 +20,6 @@
     "nodemailer": "^8.0.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "tls-certificate-checker": "^1.0.3",
     "xposedornot": "^0.1.0"
   },
   "type": "module"
