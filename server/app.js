@@ -11,6 +11,7 @@ import {limiter} from "./utils/rate.limiting.js";
 // import helmet from 'helmet'
 
 const app = express();
+app.use(express.json());
 
 app.use(cors({
   origin: "https://safe-net-seven.vercel.app", 
@@ -27,7 +28,7 @@ app.use(morgan("combined", {
 })) ;
 
 app.set("trust proxy",1) ;
-app.use(express.json());
+
 app.use(limiter) ;
 
 /**
