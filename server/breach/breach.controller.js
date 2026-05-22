@@ -5,6 +5,10 @@ const xon = new XposedOrNot();
 export const checkEmail = async(req,res) => {
     try {
         const email = req.body.email ;
+
+        console.log(email) ;
+        console.log("HEADERS:", req.headers);
+        console.log("BODY:", req.body);
         
         if (!email || typeof email !== "string") {
             return res.status(400).json({ message: "Invalid email" });
