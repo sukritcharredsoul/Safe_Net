@@ -4,7 +4,7 @@ const xon = new XposedOrNot();
 
 export const checkEmail = async(req,res) => {
     try {
-        const email = req.body.email ;
+        const email = req.query.email ;
 
         console.log(email) ;
         console.log("HEADERS:", req.headers);
