@@ -41,7 +41,34 @@ const fileHistorySchema = new mongoose.Schema({
         type: String,
         enum: ["pending", "completed", "failed"],
         default: "pending"
-    }
+    } ,
+    riskScore: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
+    riskLevel: {
+        type: String,
+        enum: ["LOW", "MEDIUM", "HIGH"],
+        default: "LOW"
+    },
+    totalEngines: {
+        type: Number,
+        required: true,
+        default: 0,
+        min: 0
+    },
+    maliciousCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    harmlessCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     
 }, 
     {

@@ -51,7 +51,7 @@ export const scanFileService = async (file, userId) => {
 
     const entry = await FileHistory.create({
         userId,
-        originalFileName: file.originalname,
+        fileName: file.originalname,
         fileHash,
         maliciousCount: 0,
         harmlessCount: 0,
@@ -90,7 +90,7 @@ export const scanFileService = async (file, userId) => {
 
         const riskScore = Math.min(
             100,
-            Math.round((malicious / total) * 100)
+            Math.round(((stats.malicious * 25) + (stats.suspicious * 10)) / total * 100)
         );
 
         const riskLevel = calculateRiskLevel(riskScore);
