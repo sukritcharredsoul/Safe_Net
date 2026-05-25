@@ -9,7 +9,8 @@ import {
   scanFileWithVT,
   getAnalysisReport,
   getDomainReport,
-  getIPReport
+  getIPReport,
+  scanUrlWithVT
 } from '../Integrations/vt.client.js';
 
 const API_KEY = process.env.VT_API_KEY;
