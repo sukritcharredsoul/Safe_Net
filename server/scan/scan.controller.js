@@ -46,7 +46,6 @@ export const scanFileController = async (req, res) => {
 export const scanUrlController = async (req, res) => {
     try {
         const { url } = req.body;
-        const userId = req.user._id;
 
         if (!url) {
             return res.status(400).json({
@@ -54,9 +53,12 @@ export const scanUrlController = async (req, res) => {
             });
         }
 
-        const result = await scanUrlService(url, userId);
+        const result = await scanUrlService(url);
 
-        return res.status(200).json(result);
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
         console.error("URL Scan Error:", error.message);
@@ -66,7 +68,6 @@ export const scanUrlController = async (req, res) => {
         });
     }
 };
-
 
 // ─────────────────────────────────────────────
 // 🔹 DOMAIN REPORT CONTROLLER

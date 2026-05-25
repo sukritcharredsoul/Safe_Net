@@ -1,43 +1,44 @@
 import crypto from 'crypto';
 import fs from 'fs';
+import axios from "axios";
+
 import FileHistory from './scanHistory.model.js';
 import { logActivity } from '../activity/activity.service.js';
 
 import {
   scanFileWithVT,
   getAnalysisReport,
-  scanUrlWithVT,
   getDomainReport,
   getIPReport
 } from '../Integrations/vt.client.js';
 
+const API_KEY = process.env.VT_API_KEY;
 
-
-
-// File hash generation : 
-
-const fileHash = (filePath) => {
-    const fileBuffer = fs.readFileSync(filePath) ;
-    return crypto.createHash('sha256').update(fileBuffer).digest('hex') ;
-}
-
-const calculateRiskLevel = (malicious, total) => {
-    const ratio = total === 0 ? 0 : malicious / total;
-
-    if (ratio > 0.3) return "high";
-    if (ratio > 0.1) return "medium";
-    return "low";
+// ─────────────────────────────────────────────
+// 🔹 FILE HASH GENERATION
+// ─────────────────────────────────────────────
+const generateFileHash = (filePath) => {
+    const fileBuffer = fs.readFileSync(filePath);
+    return crypto.createHash('sha256').update(fileBuffer).digest('hex');
 };
 
+// ─────────────────────────────────────────────
+// 🔹 RISK LEVEL CALCULATION
+// ─────────────────────────────────────────────
+const calculateRiskLevel = (score) => {
+    if (score > 70) return "HIGH";
+    if (score > 40) return "MEDIUM";
+    return "LOW";
+};
 
-
+// ─────────────────────────────────────────────
+// 🔹 FILE SCAN SERVICE
+// ─────────────────────────────────────────────
 export const scanFileService = async (file, userId) => {
     const filePath = file.path;
 
-    // 1. Hash
     const fileHash = generateFileHash(filePath);
 
-    // 2. Check DB (deduplication)
     const existing = await FileHistory.findOne({ fileHash });
 
     if (existing && existing.scanStatus === "completed") {
@@ -48,7 +49,6 @@ export const scanFileService = async (file, userId) => {
         return { source: "pending", data: existing };
     }
 
-    // 3. Create new entry
     const entry = await FileHistory.create({
         userId,
         originalFileName: file.originalname,
@@ -56,42 +56,52 @@ export const scanFileService = async (file, userId) => {
         maliciousCount: 0,
         harmlessCount: 0,
         totalEngines: 0,
+        riskScore: 0,
+        riskLevel: "LOW",
         scanStatus: "pending"
     });
 
     try {
-        // 4. Send to VirusTotal
         const vtUpload = await scanFileWithVT(filePath);
         const analysisId = vtUpload.data.id;
 
-        // 5. Poll result (basic version)
         let report;
         let attempts = 0;
+        const MAX_ATTEMPTS = 15;
 
-        while (attempts < 10) {
+        while (attempts < MAX_ATTEMPTS) {
             report = await getAnalysisReport(analysisId);
 
             if (report.data.attributes.status === "completed") break;
 
-            await new Promise(res => setTimeout(res, 3000));
+            await new Promise(res => setTimeout(res, 2500));
             attempts++;
         }
 
-        const stats = report.data.attributes.stats;
+        if (!report || report.data.attributes.status !== "completed") {
+            throw new Error("Scan timeout");
+        }
+
+        const stats = report.data.attributes.stats || {};
 
         const malicious = stats.malicious || 0;
         const harmless = stats.harmless || 0;
-        const total = Object.values(stats).reduce((a, b) => a + b, 0);
+        const total = Object.values(stats).reduce((a, b) => a + b, 0) || 1;
 
-        const riskLevel = calculateRiskLevel(malicious, total);
+        const riskScore = Math.min(
+            100,
+            Math.round((malicious / total) * 100)
+        );
 
-        // 6. Update DB
+        const riskLevel = calculateRiskLevel(riskScore);
+
         const updated = await FileHistory.findByIdAndUpdate(
             entry._id,
             {
                 maliciousCount: malicious,
                 harmlessCount: harmless,
                 totalEngines: total,
+                riskScore,
                 riskLevel,
                 scanStatus: "completed",
                 scanId: analysisId
@@ -99,19 +109,18 @@ export const scanFileService = async (file, userId) => {
             { new: true }
         );
 
-        // 7. Log activity
         await logActivity({
             userId,
             actionType: "FILE_SCAN",
             input: file.originalname,
-            result: {
-                riskScore: malicious,
-                riskLevel
-            },
+            result: { riskScore, riskLevel },
             fileHistoryId: updated._id
         });
 
-        return { source: "virustotal", data: updated };
+        return {
+            source: "virustotal",
+            data: updated
+        };
 
     } catch (error) {
         await FileHistory.findByIdAndUpdate(entry._id, {
@@ -122,30 +131,86 @@ export const scanFileService = async (file, userId) => {
     }
 };
 
-
 // ─────────────────────────────────────────────
-// 🔹 URL SCAN
+// 🔹 URL SCAN SERVICE
 // ─────────────────────────────────────────────
-
 export const scanUrlService = async (url, userId) => {
     try {
-        const vtResponse = await scanUrlWithVT(url);
-        const analysisId = vtResponse.data.id;
+        const submitRes = await axios.post(
+            "https://www.virustotal.com/api/v3/urls",
+            new URLSearchParams({ url }),
+            {
+                headers: {
+                    "x-apikey": API_KEY,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            }
+        );
 
-        // (Optional) You can poll like file, but skipping for now
+        const analysisId = submitRes.data.data.id;
+
+        let status = "queued";
+        let analysisData;
+        let attempts = 0;
+
+        while (status !== "completed" && attempts < 15) {
+            const res = await axios.get(
+                `https://www.virustotal.com/api/v3/analyses/${analysisId}`,
+                { headers: { "x-apikey": API_KEY } }
+            );
+
+            status = res.data.data.attributes.status;
+            analysisData = res.data.data.attributes;
+
+            if (status !== "completed") {
+                await new Promise(r => setTimeout(r, 2500));
+                attempts++;
+            }
+        }
+
+        if (!analysisData || status !== "completed") {
+            throw new Error("Scan timeout");
+        }
+
+        const stats = analysisData.stats || {};
+        const total = Object.values(stats).reduce((a, b) => a + b, 0) || 1;
+
+        const riskScore = Math.min(
+            100,
+            Math.round(
+                ((stats.malicious * 25) + (stats.suspicious * 10)) / total * 100
+            )
+        );
+
+        const riskLevel = calculateRiskLevel(riskScore);
+
+        const results = analysisData.results || {};
+
+        const topThreats = Object.entries(results)
+            .filter(([_, val]) => val.category === "malicious")
+            .slice(0, 5)
+            .map(([engine, val]) => ({
+                engine,
+                result: val.result
+            }));
 
         await logActivity({
             userId,
             actionType: "URL_SCAN",
             input: url,
-            result: {
-                riskLevel: "unknown"
-            }
+            result: { riskScore, riskLevel }
         });
 
         return {
-            message: "URL submitted for scanning",
-            analysisId
+            source: "virustotal",
+            data: {
+                url,
+                status,
+                riskScore,
+                riskLevel,
+                stats,
+                topThreats
+            }
         };
 
     } catch (error) {
@@ -153,29 +218,41 @@ export const scanUrlService = async (url, userId) => {
     }
 };
 
-
 // ─────────────────────────────────────────────
 // 🔹 DOMAIN REPORT
 // ─────────────────────────────────────────────
-
 export const getDomainReportService = async (domain) => {
     try {
-        const data = await getDomainReport(domain);
-        return data;
+        const res = await getDomainReport(domain);
+
+        const stats = res.data.attributes.last_analysis_stats || {};
+
+        return {
+            domain,
+            stats,
+            reputation: res.data.attributes.reputation
+        };
+
     } catch (error) {
         throw new Error("Domain report failed");
     }
 };
 
-
 // ─────────────────────────────────────────────
 // 🔹 IP REPORT
 // ─────────────────────────────────────────────
-
 export const getIPReportService = async (ip) => {
     try {
-        const data = await getIPReport(ip);
-        return data;
+        const res = await getIPReport(ip);
+
+        const stats = res.data.attributes.last_analysis_stats || {};
+
+        return {
+            ip,
+            stats,
+            reputation: res.data.attributes.reputation
+        };
+
     } catch (error) {
         throw new Error("IP report failed");
     }
