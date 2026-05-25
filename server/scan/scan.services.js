@@ -136,9 +136,24 @@ export const scanFileService = async (file, userId) => {
 // ─────────────────────────────────────────────
 export const scanUrlService = async (url, userId) => {
     try {
+        // ✅ Normalize
+        if (!url || typeof url !== "string") {
+            throw new Error("Invalid URL");
+        }
+
+        url = url.trim();
+        if (!url.startsWith("http")) {
+            url = "https://" + url;
+        }
+
+        // ✅ Encode URL properly
+        const formData = new URLSearchParams();
+        formData.append("url", url);
+
+        // STEP 1: Submit
         const submitRes = await axios.post(
             "https://www.virustotal.com/api/v3/urls",
-            new URLSearchParams({ url }),
+            formData,
             {
                 headers: {
                     "x-apikey": API_KEY,
@@ -149,21 +164,24 @@ export const scanUrlService = async (url, userId) => {
 
         const analysisId = submitRes.data.data.id;
 
+        // STEP 2: Poll
         let status = "queued";
         let analysisData;
         let attempts = 0;
 
-        while (status !== "completed" && attempts < 15) {
+        while (status !== "completed" && attempts < 20) {
             const res = await axios.get(
                 `https://www.virustotal.com/api/v3/analyses/${analysisId}`,
-                { headers: { "x-apikey": API_KEY } }
+                {
+                    headers: { "x-apikey": API_KEY }
+                }
             );
 
             status = res.data.data.attributes.status;
             analysisData = res.data.data.attributes;
 
             if (status !== "completed") {
-                await new Promise(r => setTimeout(r, 2500));
+                await new Promise(r => setTimeout(r, 3000));
                 attempts++;
             }
         }
@@ -172,6 +190,7 @@ export const scanUrlService = async (url, userId) => {
             throw new Error("Scan timeout");
         }
 
+        // STEP 3: Process
         const stats = analysisData.stats || {};
         const total = Object.values(stats).reduce((a, b) => a + b, 0) || 1;
 
@@ -205,7 +224,6 @@ export const scanUrlService = async (url, userId) => {
             source: "virustotal",
             data: {
                 url,
-                status,
                 riskScore,
                 riskLevel,
                 stats,
@@ -214,11 +232,10 @@ export const scanUrlService = async (url, userId) => {
         };
 
     } catch (error) {
-        console.error("VT ERROR FULL:", error.response?.data || error.message);
-        throw new Error(error.response?.data?.error?.message || "URL scan failed");
+        console.error("URL SCAN ERROR:", error.response?.data || error.message);
+        throw new Error(error.response?.data?.error?.message || error.message || "URL scan failed");
     }
 };
-
 // ─────────────────────────────────────────────
 // 🔹 DOMAIN REPORT
 // ─────────────────────────────────────────────
