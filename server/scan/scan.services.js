@@ -142,43 +142,25 @@ export const scanUrlService = async (url, userId) => {
         }
 
         url = url.trim();
-        if (!url.startsWith("http")) {
+
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
             url = "https://" + url;
         }
 
-        // ✅ Encode URL properly
-        const formData = new URLSearchParams();
-        formData.append("url", url);
+        // ✅ STEP 1: Submit via wrapper
+        const submitRes = await scanUrlWithVT(url);
+        const analysisId = submitRes.data.id;
 
-        // STEP 1: Submit
-        const submitRes = await axios.post(
-            "https://www.virustotal.com/api/v3/urls",
-            formData,
-            {
-                headers: {
-                    "x-apikey": API_KEY,
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
-            }
-        );
-
-        const analysisId = submitRes.data.data.id;
-
-        // STEP 2: Poll
+        // ✅ STEP 2: Poll
         let status = "queued";
         let analysisData;
         let attempts = 0;
 
         while (status !== "completed" && attempts < 20) {
-            const res = await axios.get(
-                `https://www.virustotal.com/api/v3/analyses/${analysisId}`,
-                {
-                    headers: { "x-apikey": API_KEY }
-                }
-            );
+            const res = await getAnalysisReport(analysisId);
 
-            status = res.data.data.attributes.status;
-            analysisData = res.data.data.attributes;
+            status = res.data.attributes.status;
+            analysisData = res.data.attributes;
 
             if (status !== "completed") {
                 await new Promise(r => setTimeout(r, 3000));
@@ -190,7 +172,7 @@ export const scanUrlService = async (url, userId) => {
             throw new Error("Scan timeout");
         }
 
-        // STEP 3: Process
+        // ✅ STEP 3: Process
         const stats = analysisData.stats || {};
         const total = Object.values(stats).reduce((a, b) => a + b, 0) || 1;
 
@@ -232,8 +214,8 @@ export const scanUrlService = async (url, userId) => {
         };
 
     } catch (error) {
-        console.error("URL SCAN ERROR:", error.response?.data || error.message);
-        throw new Error(error.response?.data?.error?.message || error.message || "URL scan failed");
+        console.error("URL SCAN ERROR:", error.message);
+        throw new Error("URL scan failed");
     }
 };
 // ─────────────────────────────────────────────
