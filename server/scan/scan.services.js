@@ -214,7 +214,8 @@ export const scanUrlService = async (url, userId) => {
         };
 
     } catch (error) {
-        throw new Error("URL scan failed");
+        console.error("VT ERROR FULL:", error.response?.data || error.message);
+        throw new Error(error.response?.data?.error?.message || "URL scan failed");
     }
 };
 
